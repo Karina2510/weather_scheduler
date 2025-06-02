@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: scheduler
+  datasource:
+    url: jdbc:mysql://localhost:33006/agendamentos?useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+
+server:
+  port: 8081
+
+aws:
+  region: us-east-1
+  sqs:
+    endpoint: http://localhost:4566
+    temperature:
+      queue-url: http://localhost:4566/000000000000/solicita-temperatura-queue
+      result-queue-url: http://localhost:4566/000000000000/retorno-temperatura-queue
+
+cptec:
+  api:
+    url: http://servicos.cptec.inpe.br/XML 

@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: webapp
+  datasource:
+    url: jdbc:mysql://localhost:33007/solicitacoes?useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+
+server:
+  port: 8080
+
+aws:
+  region: us-east-1
+  sqs:
+    endpoint: http://localhost:4566
+    temperature:
+      queue-url: http://localhost:4566/000000000000/solicita-temperatura-queue
+      result-queue-url: http://localhost:4566/000000000000/retorno-temperatura-queue
+
+scheduler:
+  url: http://localhost:8081

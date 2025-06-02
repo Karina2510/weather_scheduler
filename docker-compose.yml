@@ -1,0 +1,121 @@
+version: '3.8'
+
+services:
+
+  webapp:
+    build: 
+      context: ./webapp
+      dockerfile: Dockerfile
+    container_name: webapp
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-solicitacoes:3306/solicitacoes?useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      - AWS_SQS_ENDPOINT=http://localstack:4566
+      - SCHEDULER_URL=http://scheduler:8081
+    depends_on:
+      - mysql-solicitacoes
+      - localstack
+      - scheduler
+    networks:
+      - ml-network
+
+  scheduler:
+    build:
+      context: ./scheduler
+      dockerfile: Dockerfile
+    container_name: scheduler
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-agendamentos:3306/agendamentos?useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      - AWS_SQS_ENDPOINT=http://localstack:4566
+    depends_on:
+      - mysql-agendamentos
+      - localstack
+    networks:
+      - ml-network
+
+  localstack:
+    container_name: localstack
+    image: localstack/localstack:3.0.0
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=sqs
+      - DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=localstack
+      - AWS_SECRET_ACCESS_KEY=localstack
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+    networks:
+      - ml-network
+
+  localstack-init:
+    image: amazon/aws-cli:2.13.25
+    environment:
+      - AWS_ACCESS_KEY_ID=localstack
+      - AWS_SECRET_ACCESS_KEY=localstack
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_ENDPOINT_URL=http://localstack:4566
+    entrypoint: /bin/sh -c
+    command: >
+      "
+        while ! curl -s -o /dev/null http://localstack:4566/_localstack/health; do
+          echo 'Waiting for LocalStack to be ready...';
+          sleep 2;
+        done;
+        echo 'Creating SQS queues...';
+        aws --endpoint-url=http://localstack:4566 sqs create-queue --queue-name solicita-temperatura-queue;
+        aws --endpoint-url=http://localstack:4566 sqs create-queue --queue-name retorno-temperatura-queue;
+        echo 'Queues created successfully!';
+      "
+    depends_on:
+      localstack:
+        condition: service_healthy
+    networks:
+      - ml-network
+
+  mysql-agendamentos:
+    image: mysql:8.0
+    container_name: mysql-agendamentos
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: agendamentos
+    ports:
+      - "33006:3306"
+    volumes:
+      - mysql_agendamentos_data:/var/lib/mysql
+    networks:
+      - ml-network
+
+  mysql-solicitacoes:
+    image: mysql:8.0
+    container_name: mysql-solicitacoes
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: solicitacoes
+    ports:
+      - "33007:3306"
+    volumes:
+      - mysql_solicitacoes_data:/var/lib/mysql
+    networks:
+      - ml-network
+
+volumes:
+  mysql_agendamentos_data:
+  mysql_solicitacoes_data:
+
+networks:
+  ml-network:
+    driver: bridge 
