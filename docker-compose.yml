@@ -2,43 +2,43 @@ version: '3.8'
 
 services:
 
-  # webapp:
-  #   build: 
-  #     context: ./webapp
-  #     dockerfile: Dockerfile
-  #   container_name: webapp
-  #   ports:
-  #     - "8080:8080"
-  #   environment:
-  #     - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-solicitacoes:3306/solicitacoes?useSSL=false&allowPublicKeyRetrieval=true
-  #     - SPRING_DATASOURCE_USERNAME=root
-  #     - SPRING_DATASOURCE_PASSWORD=root
-  #     - AWS_SQS_ENDPOINT=http://localstack:4566
-  #     - SCHEDULER_URL=http://scheduler:8081
-  #   depends_on:
-  #     - mysql-solicitacoes
-  #     - localstack
-  #     - scheduler
-  #   networks:
-  #     - ml-network
+  webapp:
+    build: 
+      context: ./webapp
+      dockerfile: Dockerfile
+    container_name: webapp
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-solicitacoes:3306/solicitacoes?useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      - AWS_SQS_ENDPOINT=http://localstack:4566
+      - SCHEDULER_URL=http://scheduler:8081
+    depends_on:
+      - mysql-solicitacoes
+      - localstack
+      - scheduler
+    networks:
+      - ml-network
 
-  # scheduler:
-  #   build:
-  #     context: ./scheduler
-  #     dockerfile: Dockerfile
-  #   container_name: scheduler
-  #   ports:
-  #     - "8081:8081"
-  #   environment:
-  #     - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-agendamentos:3306/agendamentos?useSSL=false&allowPublicKeyRetrieval=true
-  #     - SPRING_DATASOURCE_USERNAME=root
-  #     - SPRING_DATASOURCE_PASSWORD=root
-  #     - AWS_SQS_ENDPOINT=http://localstack:4566
-  #   depends_on:
-  #     - mysql-agendamentos
-  #     - localstack
-  #   networks:
-  #     - ml-network
+  scheduler:
+    build:
+      context: ./scheduler
+      dockerfile: Dockerfile
+    container_name: scheduler
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-agendamentos:3306/agendamentos?useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      - AWS_SQS_ENDPOINT=http://localstack:4566
+    depends_on:
+      - mysql-agendamentos
+      - localstack
+    networks:
+      - ml-network
 
   localstack:
     container_name: localstack
