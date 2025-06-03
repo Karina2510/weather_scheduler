@@ -5,12 +5,14 @@ import com.mercadolivre.scheduler.domain.TemperatureSchedule;
 import com.mercadolivre.scheduler.domain.repository.TemperatureScheduleRepository;
 import com.mercadolivre.scheduler.infrastructure.http.CptecClient;
 import com.mercadolivre.scheduler.infrastructure.http.response.CidadeResponse;
+import com.mercadolivre.scheduler.infrastructure.http.response.OndasResponse;
 import com.mercadolivre.scheduler.infrastructure.http.response.PrevisaoResponse;
 import com.mercadolivre.scheduler.infrastructure.sqs.SqsTemperatureResultSender;
 import com.mercadolivre.scheduler.infrastructure.sqs.message.TemperatureResultMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpServerErrorException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 public class ProcessTemperatureSchedulesUseCase {
 
     private static final Set<ScheduleStatus> PROCESSABLE_STATUS = Set.of(ScheduleStatus.AGENDADO, ScheduleStatus.ERRO);
+    private static final String CURRENT_DAY_PARAM = "0"; // Parâmetro para buscar ondas do dia atual
     
     private final TemperatureScheduleRepository repository;
     private final CptecClient cptecClient;
@@ -47,7 +50,24 @@ public class ProcessTemperatureSchedulesUseCase {
             repository.save(schedule);
 
             CidadeResponse cidade = cptecClient.getTemperature(schedule.getCityId());
-            sendResultToSqs(schedule, cidade);
+            
+            // Tenta buscar dados de onda do dia atual
+            OndasResponse onda = null;
+            try {
+                onda = cptecClient.getWaves(schedule.getCityId(), CURRENT_DAY_PARAM);
+                
+                // Verifica se os dados de onda são válidos
+                if (!onda.hasValidData()) {
+                    log.info("City {} has no valid wave data", schedule.getCityId());
+                    onda = null;
+                } else {
+                    log.info("Current day wave data found for city {}", schedule.getCityId());
+                }
+            } catch (HttpServerErrorException e) {
+                log.info("Error getting wave data for city {}: {}", schedule.getCityId(), e.getMessage());
+            }
+
+            sendResultToSqs(schedule, cidade, onda);
 
             schedule.setStatus(ScheduleStatus.CONCLUIDO);
             repository.save(schedule);
@@ -60,25 +80,43 @@ public class ProcessTemperatureSchedulesUseCase {
         }
     }
 
-    private void sendResultToSqs(TemperatureSchedule schedule, CidadeResponse cidade) {
+    private void sendResultToSqs(TemperatureSchedule schedule, CidadeResponse cidade, OndasResponse onda) {
         List<TemperatureResultMessage.ForecastData> forecasts = cidade.getPrevisoes().stream()
-                .map(this::mapForecast)
+                .map(previsao -> mapForecast(previsao))
                 .collect(Collectors.toList());
 
-        log.info("Sending message to SQS for city: {} (scheduleDate: {})", 
-                schedule.getCityId(), 
-                schedule.getScheduleDate());
-
-        TemperatureResultMessage message = TemperatureResultMessage.builder()
+        var messageBuilder = TemperatureResultMessage.builder()
                 .scheduleId(schedule.getScheduleId())
                 .cityId(schedule.getCityId())
                 .cityName(cidade.getNome())
                 .state(cidade.getUf())
                 .requestDate(schedule.getScheduleDate())
-                .forecasts(forecasts)
-                .build();
+                .forecasts(forecasts);
 
-        sqsSender.send(message);
+        // Adiciona dados de onda se disponíveis e válidos
+        if (onda != null && onda.hasValidData()) {
+            messageBuilder.wave(
+                TemperatureResultMessage.WaveData.builder()
+                    .date(onda.getAtualizacaoAsLocalDate())
+                    .morning(mapWavePeriod(onda.getManha()))
+                    .afternoon(mapWavePeriod(onda.getTarde()))
+                    .night(mapWavePeriod(onda.getNoite()))
+                    .build()
+            );
+        }
+
+        sqsSender.send(messageBuilder.build());
+    }
+
+    private TemperatureResultMessage.WavePeriodData mapWavePeriod(OndasResponse.PeriodoResponse periodo) {
+        return TemperatureResultMessage.WavePeriodData.builder()
+            .time(periodo.getDia())
+            .agitation(periodo.getAgitacao())
+            .waveHeight(periodo.getAltura())
+            .waveDirection(periodo.getDirecao())
+            .windSpeed(periodo.getVento())
+            .windDirection(periodo.getVento_dir())
+            .build();
     }
 
     private TemperatureResultMessage.ForecastData mapForecast(PrevisaoResponse previsao) {

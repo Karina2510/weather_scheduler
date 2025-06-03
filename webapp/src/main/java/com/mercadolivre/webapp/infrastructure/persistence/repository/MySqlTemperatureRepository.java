@@ -37,4 +37,11 @@ public class MySqlTemperatureRepository implements TemperatureRepository {
                 .map(mapper::toDomain)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public Temperature save(Temperature temperature) {
+        TemperatureEntity entity = mapper.toEntity(temperature);
+        TemperatureEntity savedEntity = repository.save(entity);
+        return mapper.toDomain(savedEntity);
+    }
 } 

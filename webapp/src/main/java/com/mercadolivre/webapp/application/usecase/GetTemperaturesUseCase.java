@@ -3,14 +3,17 @@ package com.mercadolivre.webapp.application.usecase;
 import com.mercadolivre.webapp.application.dto.TemperatureResponse;
 import com.mercadolivre.webapp.domain.Schedule;
 import com.mercadolivre.webapp.domain.Temperature;
+import com.mercadolivre.webapp.domain.Wave;
 import com.mercadolivre.webapp.domain.enums.ScheduleStatus;
 import com.mercadolivre.webapp.domain.repository.ScheduleRepository;
 import com.mercadolivre.webapp.domain.repository.TemperatureRepository;
+import com.mercadolivre.webapp.domain.repository.WaveRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
@@ -18,14 +21,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class GetTemperaturesUseCase {
 
-    private final TemperatureRepository temperatureRepository;
     private final ScheduleRepository scheduleRepository;
+    private final TemperatureRepository temperatureRepository;
+    private final WaveRepository waveRepository;
 
     public GetTemperaturesResult execute(Long scheduleId) {
         log.info("Getting temperatures for scheduleId: {}", scheduleId);
 
         // Busca o agendamento
-        Schedule schedule = scheduleRepository.findById(scheduleId)
+        var schedule = scheduleRepository.findById(scheduleId)
                 .orElse(null);
         
         if (schedule == null) {
@@ -45,12 +49,16 @@ public class GetTemperaturesUseCase {
             return GetTemperaturesResult.pending("Agendamento ainda não disponível");
         }
 
+        // Busca temperaturas
         List<Temperature> temperatures = temperatureRepository.findByScheduleId(scheduleId);
         
         if (temperatures.isEmpty()) {
             log.info("No temperatures found for scheduleId: {}", scheduleId);
             return GetTemperaturesResult.notFound("Temperaturas não encontradas");
         }
+
+        // Busca dados de onda se existirem
+        List<Wave> waves = waveRepository.findByScheduleId(scheduleId);
 
         // Pega os dados da primeira temperatura para montar o cabeçalho
         Temperature firstTemp = temperatures.get(0);
@@ -65,13 +73,41 @@ public class GetTemperaturesUseCase {
                         .build())
                 .collect(Collectors.toList());
 
-        TemperatureResponse response = TemperatureResponse.builder()
+        var responseBuilder = TemperatureResponse.builder()
                 .cityId(firstTemp.getCityId())
                 .cityName(firstTemp.getCityName())
                 .state(firstTemp.getState())
-                .forecasts(forecasts)
-                .build();
+                .forecasts(forecasts);
 
-        return GetTemperaturesResult.success(response);
+        // Adiciona dados de onda se disponíveis
+        if (!waves.isEmpty()) {
+            // Agrupa as ondas por período
+            Map<String, Wave> wavesByPeriod = waves.stream()
+                .collect(Collectors.toMap(Wave::getPeriod, wave -> wave));
+
+            responseBuilder.wave(
+                TemperatureResponse.WaveData.builder()
+                    .date(waves.get(0).getForecastDate())
+                    .morning(mapWavePeriod(wavesByPeriod.get("MORNING")))
+                    .afternoon(mapWavePeriod(wavesByPeriod.get("AFTERNOON")))
+                    .night(mapWavePeriod(wavesByPeriod.get("NIGHT")))
+                    .build()
+            );
+        }
+
+        return GetTemperaturesResult.success(responseBuilder.build());
+    }
+
+    private TemperatureResponse.WavePeriodData mapWavePeriod(Wave wave) {
+        if (wave == null) return null;
+        
+        return TemperatureResponse.WavePeriodData.builder()
+            .time(wave.getTime())
+            .agitation(wave.getWaveAgitation())
+            .waveHeight(wave.getWaveHeight())
+            .waveDirection(wave.getWaveDirection())
+            .windSpeed(wave.getWindSpeed())
+            .windDirection(wave.getWindDirection())
+            .build();
     }
 } 

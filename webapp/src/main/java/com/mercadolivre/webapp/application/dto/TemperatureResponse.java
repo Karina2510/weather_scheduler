@@ -14,6 +14,7 @@ public class TemperatureResponse {
     private String cityName;
     private String state;
     private List<ForecastData> forecasts;
+    private WaveData wave;
 
     @Data
     @Builder
@@ -24,5 +25,26 @@ public class TemperatureResponse {
         private Integer minTemperature;
         private Integer maxTemperature;
         private Double uvIndex;
+    }
+
+    @Data
+    @Builder
+    public static class WaveData {
+        @JsonFormat(pattern = "yyyy-MM-dd")
+        private LocalDate date;
+        private WavePeriodData morning;
+        private WavePeriodData afternoon;
+        private WavePeriodData night;
+    }
+
+    @Data
+    @Builder
+    public static class WavePeriodData {
+        private String time;
+        private String agitation;
+        private Double waveHeight;
+        private String waveDirection;
+        private Double windSpeed;
+        private String windDirection;
     }
 } 

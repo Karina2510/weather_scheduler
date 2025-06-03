@@ -44,29 +44,31 @@ public class SqsTemperatureResultConsumer {
             log.debug("Received {} messages from queue", messages.size());
 
             for (Message message : messages) {
-                processMessage(message);
-                deleteMessage(message);
+                try {
+                    processMessage(message);
+                    // Só deleta a mensagem se o processamento foi bem sucedido
+                    deleteMessage(message);
+                    log.info("Message {} processed and deleted successfully", message.messageId());
+                } catch (Exception e) {
+                    log.error("Error processing message {}, it will return to the queue: {}", 
+                            message.messageId(), e.getMessage(), e);
+                }
             }
         } catch (Exception e) {
             log.error("Error consuming messages from SQS: {}", e.getMessage(), e);
         }
     }
 
-    private void processMessage(Message message) {
-        try {
-            log.debug("Processing message with ID: {}", message.messageId());
-            
-            TemperatureResultMessage resultMessage = objectMapper.readValue(
-                    message.body(), 
-                    TemperatureResultMessage.class
-            );
+    private void processMessage(Message message) throws Exception {
+        log.debug("Processing message with ID: {}", message.messageId());
+        
+        TemperatureResultMessage resultMessage = objectMapper.readValue(
+                message.body(), 
+                TemperatureResultMessage.class
+        );
 
-            ProcessTemperatureResultInput input = convertToInput(resultMessage);
-            processTemperatureResultUseCase.execute(input);
-
-        } catch (Exception e) {
-            log.error("Error processing message: {}", e.getMessage(), e);
-        }
+        ProcessTemperatureResultInput input = convertToInput(resultMessage);
+        processTemperatureResultUseCase.execute(input);
     }
 
     private ProcessTemperatureResultInput convertToInput(TemperatureResultMessage message) {
@@ -75,9 +77,11 @@ public class SqsTemperatureResultConsumer {
                 .cityId(message.getCityId())
                 .cityName(message.getCityName())
                 .state(message.getState())
+                .requestDate(message.getRequestDate())
                 .forecasts(message.getForecasts().stream()
                         .map(this::convertForecast)
                         .collect(Collectors.toList()))
+                .wave(message.getWave() != null ? convertWave(message.getWave()) : null)
                 .build();
     }
 
@@ -88,6 +92,27 @@ public class SqsTemperatureResultConsumer {
                 .minTemperature(forecast.getMinTemperature())
                 .maxTemperature(forecast.getMaxTemperature())
                 .uvIndex(forecast.getUvIndex())
+                .build();
+    }
+
+    private ProcessTemperatureResultInput.WaveData convertWave(TemperatureResultMessage.WaveData wave) {
+        return ProcessTemperatureResultInput.WaveData.builder()
+                .date(wave.getDate())
+                .morning(convertWavePeriod(wave.getMorning()))
+                .afternoon(convertWavePeriod(wave.getAfternoon()))
+                .night(convertWavePeriod(wave.getNight()))
+                .build();
+    }
+
+    private ProcessTemperatureResultInput.WavePeriodData convertWavePeriod(TemperatureResultMessage.WavePeriodData period) {
+        if (period == null) return null;
+        return ProcessTemperatureResultInput.WavePeriodData.builder()
+                .time(period.getTime())
+                .agitation(period.getAgitation())
+                .waveHeight(period.getWaveHeight())
+                .waveDirection(period.getWaveDirection())
+                .windSpeed(period.getWindSpeed())
+                .windDirection(period.getWindDirection())
                 .build();
     }
 
@@ -104,6 +129,7 @@ public class SqsTemperatureResultConsumer {
             log.debug("Message deleted successfully");
         } catch (Exception e) {
             log.error("Error deleting message: {}", e.getMessage(), e);
+            throw e; // Propaga o erro para garantir que a mensagem volte para a fila
         }
     }
 } 

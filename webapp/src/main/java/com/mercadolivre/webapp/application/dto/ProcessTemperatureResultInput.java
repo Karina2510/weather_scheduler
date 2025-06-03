@@ -13,7 +13,9 @@ public class ProcessTemperatureResultInput {
     private String cityId;
     private String cityName;
     private String state;
+    private LocalDate requestDate;
     private List<ForecastData> forecasts;
+    private WaveData wave;
 
     @Data
     @Builder
@@ -23,5 +25,25 @@ public class ProcessTemperatureResultInput {
         private Integer minTemperature;
         private Integer maxTemperature;
         private Double uvIndex;
+    }
+
+    @Data
+    @Builder
+    public static class WaveData {
+        private LocalDate date;
+        private WavePeriodData morning;
+        private WavePeriodData afternoon;
+        private WavePeriodData night;
+    }
+
+    @Data
+    @Builder
+    public static class WavePeriodData {
+        private String time;
+        private String agitation;
+        private Double waveHeight;
+        private String waveDirection;
+        private Double windSpeed;
+        private String windDirection;
     }
 } 

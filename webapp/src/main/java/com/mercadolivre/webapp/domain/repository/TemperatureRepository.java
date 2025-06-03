@@ -7,4 +7,5 @@ import java.util.List;
 public interface TemperatureRepository {
     List<Temperature> saveAll(List<Temperature> temperatures);
     List<Temperature> findByScheduleId(Long scheduleId);
+    Temperature save(Temperature temperature);
 } 
