@@ -1,0 +1,90 @@
+{
+	"info": {
+		"_postman_id": "82bf4ef7-7350-40a7-ac12-cad3c1459787",
+		"name": "API AGENDAMENTO",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "20554898"
+	},
+	"item": [
+		{
+			"name": "FAZ AGENDAMENTO",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"cityId\": \"3656\",\r\n  \"scheduleDate\": \"2025-06-02\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/weather/schedule",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"weather",
+						"schedule"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "BUSCA AGENDAMENTO",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/weather/schedule/2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"weather",
+						"schedule",
+						"2"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CANCELA AGENDAMENTO",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"cityId\": \"4748\",\r\n  \"scheduleDate\": \"2025-06-01\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/weather/schedule/4",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"weather",
+						"schedule",
+						"4"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
