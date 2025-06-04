@@ -10,17 +10,17 @@ import java.util.List;
 
 @Data
 @JacksonXmlRootElement(localName = "cidade")
-public class CidadeResponse {
+public class CityResponse {
     @JacksonXmlProperty(localName = "nome")
-    private String nome;
+    private String name;
 
     @JacksonXmlProperty(localName = "uf")
     private String uf;
 
     @JacksonXmlProperty(localName = "atualizacao")
-    private LocalDate atualizacao;
+    private LocalDate update;
 
     @JacksonXmlElementWrapper(useWrapping = false)
     @JacksonXmlProperty(localName = "previsao")
-    private List<PrevisaoResponse> previsoes;
+    private List<PrevisaoResponse> predictions;
 } 

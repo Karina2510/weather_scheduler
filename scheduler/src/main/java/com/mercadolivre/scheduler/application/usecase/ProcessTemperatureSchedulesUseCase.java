@@ -4,7 +4,7 @@ import com.mercadolivre.scheduler.domain.ScheduleStatus;
 import com.mercadolivre.scheduler.domain.TemperatureSchedule;
 import com.mercadolivre.scheduler.domain.repository.TemperatureScheduleRepository;
 import com.mercadolivre.scheduler.infrastructure.http.CptecClient;
-import com.mercadolivre.scheduler.infrastructure.http.response.CidadeResponse;
+import com.mercadolivre.scheduler.infrastructure.http.response.CityResponse;
 import com.mercadolivre.scheduler.infrastructure.http.response.OndasResponse;
 import com.mercadolivre.scheduler.infrastructure.http.response.PrevisaoResponse;
 import com.mercadolivre.scheduler.infrastructure.sqs.SqsTemperatureResultSender;
@@ -49,7 +49,7 @@ public class ProcessTemperatureSchedulesUseCase {
             schedule.setStatus(ScheduleStatus.PROCESSANDO);
             repository.save(schedule);
 
-            CidadeResponse cidade = cptecClient.getTemperature(schedule.getCityId());
+            CityResponse temperature = cptecClient.getTemperature(schedule.getCityId());
             
             // Tenta buscar dados de onda do dia atual
             OndasResponse onda = null;
@@ -67,7 +67,7 @@ public class ProcessTemperatureSchedulesUseCase {
                 log.info("Error getting wave data for city {}: {}", schedule.getCityId(), e.getMessage());
             }
 
-            sendResultToSqs(schedule, cidade, onda);
+            sendResultToSqs(schedule, temperature, onda);
 
             schedule.setStatus(ScheduleStatus.CONCLUIDO);
             repository.save(schedule);
@@ -80,27 +80,27 @@ public class ProcessTemperatureSchedulesUseCase {
         }
     }
 
-    private void sendResultToSqs(TemperatureSchedule schedule, CidadeResponse cidade, OndasResponse onda) {
-        List<TemperatureResultMessage.ForecastData> forecasts = cidade.getPrevisoes().stream()
-                .map(previsao -> mapForecast(previsao))
+    private void sendResultToSqs(TemperatureSchedule schedule, CityResponse cidade, OndasResponse wave) {
+        List<TemperatureResultMessage.ForecastData> forecasts = cidade.getPredictions().stream()
+                .map(forecast -> mapForecast(forecast))
                 .collect(Collectors.toList());
 
         var messageBuilder = TemperatureResultMessage.builder()
                 .scheduleId(schedule.getScheduleId())
                 .cityId(schedule.getCityId())
-                .cityName(cidade.getNome())
+                .cityName(cidade.getName())
                 .state(cidade.getUf())
                 .requestDate(schedule.getScheduleDate())
                 .forecasts(forecasts);
 
         // Adiciona dados de onda se disponíveis e válidos
-        if (onda != null && onda.hasValidData()) {
+        if (wave != null && wave.hasValidData()) {
             messageBuilder.wave(
                 TemperatureResultMessage.WaveData.builder()
-                    .date(onda.getAtualizacaoAsLocalDate())
-                    .morning(mapWavePeriod(onda.getManha()))
-                    .afternoon(mapWavePeriod(onda.getTarde()))
-                    .night(mapWavePeriod(onda.getNoite()))
+                    .date(wave.getAtualizacaoAsLocalDate())
+                    .morning(mapWavePeriod(wave.getManha()))
+                    .afternoon(mapWavePeriod(wave.getTarde()))
+                    .night(mapWavePeriod(wave.getNoite()))
                     .build()
             );
         }

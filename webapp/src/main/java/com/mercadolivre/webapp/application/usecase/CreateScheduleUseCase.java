@@ -4,7 +4,7 @@ import com.mercadolivre.webapp.domain.Schedule;
 import com.mercadolivre.webapp.domain.repository.ScheduleRepository;
 import com.mercadolivre.webapp.application.usecase.dto.CreateScheduleInput;
 import com.mercadolivre.webapp.domain.enums.ScheduleStatus;
-import com.mercadolivre.webapp.domain.port.ScheduleQueue;
+import com.mercadolivre.webapp.domain.message.ScheduleQueue;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class CreateScheduleUseCase {
 
     private final ScheduleRepository scheduleRepository;

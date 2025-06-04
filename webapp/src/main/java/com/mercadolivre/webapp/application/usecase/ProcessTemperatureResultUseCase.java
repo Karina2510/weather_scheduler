@@ -24,7 +24,6 @@ public class ProcessTemperatureResultUseCase {
     private final WaveRepository waveRepository;
     private final ScheduleRepository scheduleRepository;
 
-    @Transactional
     public void execute(ProcessTemperatureResultInput input) {
         log.info("Processing temperature result for scheduleId: {}", input.getScheduleId());
 

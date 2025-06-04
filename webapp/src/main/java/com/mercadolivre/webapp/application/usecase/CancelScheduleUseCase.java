@@ -1,14 +1,13 @@
 package com.mercadolivre.webapp.application.usecase;
 
+import com.mercadolivre.webapp.application.dto.CancelScheduleResult;
 import com.mercadolivre.webapp.domain.Schedule;
 import com.mercadolivre.webapp.domain.enums.ScheduleStatus;
 import com.mercadolivre.webapp.domain.repository.ScheduleRepository;
 import com.mercadolivre.webapp.infrastructure.feign.SchedulerClient;
-import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @Slf4j
@@ -18,7 +17,6 @@ public class CancelScheduleUseCase {
     private final ScheduleRepository scheduleRepository;
     private final SchedulerClient schedulerClient;
 
-    @Transactional
     public CancelScheduleResult execute(Long scheduleId) {
         log.info("Canceling schedule with ID: {}", scheduleId);
 
@@ -44,15 +42,6 @@ public class CancelScheduleUseCase {
             // Primeiro atualiza o status no banco de dados
             schedule.setStatus(ScheduleStatus.CANCELADO);
             scheduleRepository.save(schedule);
-
-            // Depois tenta cancelar no serviço scheduler
-            try {
-                schedulerClient.cancelSchedule(scheduleId);
-            } catch (FeignException e) {
-                log.error("Error canceling schedule in scheduler service: {}", e.getMessage(), e);
-                // Mesmo com erro no scheduler, mantemos o status CANCELADO no webapp
-                // pois o usuário solicitou o cancelamento e ele não deve ser mais processado
-            }
 
             log.info("Schedule {} canceled successfully", scheduleId);
             return CancelScheduleResult.success();

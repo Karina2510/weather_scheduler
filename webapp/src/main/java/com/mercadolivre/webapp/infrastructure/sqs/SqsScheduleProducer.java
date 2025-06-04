@@ -2,7 +2,7 @@ package com.mercadolivre.webapp.infrastructure.sqs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mercadolivre.webapp.domain.Schedule;
-import com.mercadolivre.webapp.domain.port.ScheduleQueue;
+import com.mercadolivre.webapp.domain.message.ScheduleQueue;
 import com.mercadolivre.webapp.infrastructure.sqs.message.TemperatureScheduleMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

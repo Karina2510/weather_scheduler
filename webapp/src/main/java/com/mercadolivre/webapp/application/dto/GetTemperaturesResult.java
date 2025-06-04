@@ -1,6 +1,5 @@
-package com.mercadolivre.webapp.application.usecase;
+package com.mercadolivre.webapp.application.dto;
 
-import com.mercadolivre.webapp.application.dto.TemperatureResponse;
 import lombok.Getter;
 
 @Getter

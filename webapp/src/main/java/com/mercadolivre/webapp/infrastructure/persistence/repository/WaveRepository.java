@@ -1,7 +1,6 @@
 package com.mercadolivre.webapp.infrastructure.persistence.repository;
 
 import com.mercadolivre.webapp.domain.Wave;
-import com.mercadolivre.webapp.domain.repository.WaveRepository;
 import com.mercadolivre.webapp.infrastructure.persistence.mapper.WaveMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -11,7 +10,7 @@ import java.util.stream.Collectors;
 
 @Repository
 @RequiredArgsConstructor
-public class WaveRepositoryImpl implements WaveRepository {
+public class WaveRepository implements com.mercadolivre.webapp.domain.repository.WaveRepository {
 
     private final JpaWaveRepository jpaWaveRepository;
     private final WaveMapper waveMapper;

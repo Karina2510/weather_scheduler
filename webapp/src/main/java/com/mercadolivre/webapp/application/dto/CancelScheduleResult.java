@@ -1,4 +1,4 @@
-package com.mercadolivre.webapp.application.usecase;
+package com.mercadolivre.webapp.application.dto;
 
 import lombok.Getter;
 

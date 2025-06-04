@@ -1,7 +1,7 @@
 package com.mercadolivre.webapp.application.usecase;
 
+import com.mercadolivre.webapp.application.dto.GetTemperaturesResult;
 import com.mercadolivre.webapp.application.dto.TemperatureResponse;
-import com.mercadolivre.webapp.domain.Schedule;
 import com.mercadolivre.webapp.domain.Temperature;
 import com.mercadolivre.webapp.domain.Wave;
 import com.mercadolivre.webapp.domain.enums.ScheduleStatus;

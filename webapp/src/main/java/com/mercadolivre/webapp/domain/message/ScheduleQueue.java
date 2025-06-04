@@ -1,4 +1,4 @@
-package com.mercadolivre.webapp.domain.port;
+package com.mercadolivre.webapp.domain.message;
 
 import com.mercadolivre.webapp.domain.Schedule;
 

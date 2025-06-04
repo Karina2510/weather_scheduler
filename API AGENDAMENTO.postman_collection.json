@@ -61,15 +61,6 @@
 			"request": {
 				"method": "DELETE",
 				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n  \"cityId\": \"4748\",\r\n  \"scheduleDate\": \"2025-06-01\"\r\n}\r\n",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
 				"url": {
 					"raw": "http://localhost:8080/weather/schedule/4",
 					"protocol": "http",
